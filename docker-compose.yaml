@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    env_file: .env
+    command: mysqld --default-authentication-plugin=mysql_native_password
+    volumes:
+     - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+    ports:
+      - 3307:3306
+  backup:
+    build: ./backup
+    container_name: mysql-backup
+    environment:
+      MYSQL_CONTAINER_NAME: mysql
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      S3_ENDPOINT: $S3_ENDPOINT
+      S3_ACCESS_KEY: $S3_ACCESS_KEY
+      S3_SECRET_KEY: $S3_SECRET_KEY
+      S3_BUCKET: $S3_BUCKET
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./backup/snapshots:/opt/mysql/backup
+    command: crond -f -d 8
+    restart: always
+
+volumes:
+  mysql-data:
